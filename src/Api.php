@@ -17,12 +17,23 @@ class Api
 	{
 		$requestPath = parse_url($requestUri, PHP_URL_PATH) ?: '/';
 
-		if (!array_key_exists($requestPath, $this->routes)) {
+		$pathRoutes = null;
+		$params = [];
+
+		foreach ($this->routes as $pattern => $methods) {
+			$matchParams = $this->match($pattern, $requestPath);
+			if ($matchParams !== null) {
+				$pathRoutes = $methods;
+				$params = $matchParams;
+				break;
+			}
+		}
+
+		if ($pathRoutes === null) {
 			$this->respondError(404, 'Endpoint not found.');
 			return;
 		}
 
-		$pathRoutes = $this->routes[$requestPath];
 		if (!array_key_exists($requestMethod, $pathRoutes)) {
 			$allowedMethods = array_keys($pathRoutes);
 			sort($allowedMethods);
@@ -33,7 +44,36 @@ class Api
 			return;
 		}
 
-		$pathRoutes[$requestMethod]();
+		try {
+			$pathRoutes[$requestMethod]($params);
+		} catch (\Throwable $e) {
+			error_log($e->getMessage());
+			$this->respondError(500, 'An internal server error occurred.');
+		}
+	}
+
+	/**
+	 * Match a route pattern (e.g. "/orders/{id}") against a request path,
+	 * returning captured named parameters, or null when it doesn't match.
+	 *
+	 * @return array<string, string>|null
+	 */
+	private function match(string $pattern, string $path): ?array
+	{
+		$regex = preg_replace('#\{(\w+)\}#', '(?P<$1>[^/]+)', $pattern);
+
+		if (preg_match('#^' . $regex . '$#', $path, $matches) !== 1) {
+			return null;
+		}
+
+		$params = [];
+		foreach ($matches as $key => $value) {
+			if (is_string($key)) {
+				$params[$key] = $value;
+			}
+		}
+
+		return $params;
 	}
 
 	/**
