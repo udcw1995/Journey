@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/OrderValidator.php';
+require_once __DIR__ . '/../OrderValidator.php';
 
 class OrderService
 {
@@ -25,20 +25,20 @@ class OrderService
 			];
 		}
 
-		$customerName = htmlspecialchars(trim((string)($data['customer_name'] ?? '')));
-		$product = htmlspecialchars(trim((string)($data['product'] ?? '')));
+		$customerName = trim((string)($data['customer_name'] ?? ''));
+		$product = trim((string)($data['product'] ?? ''));
 		$quantity = (int)($data['quantity'] ?? 0);
 		$unitPrice = (float)($data['unit_price'] ?? 0.0);
 
 		return [
 			'status' => 'success',
-			'message' => 'Order processed successfully.',
-			'data' => [
+			'message' => 'Order created successfully',
+			'order' => [
 				'customer_name' => $customerName,
 				'product' => $product,
 				'quantity' => $quantity,
 				'unit_price' => $unitPrice,
-				'total_price' => $quantity * $unitPrice
+				'total' => $quantity * $unitPrice
 			]
 		];
 	}

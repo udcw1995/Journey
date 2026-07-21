@@ -9,24 +9,32 @@ class OrderValidator
 	{
 		$errors = [];
 
-		$customerName = trim((string)($data['customer_name'] ?? ''));
-		$product = trim((string)($data['product'] ?? ''));
+		$customerNameRaw = $data['customer_name'] ?? null;
+		$productRaw = $data['product'] ?? null;
 		$quantity = $data['quantity'] ?? null;
 		$unitPrice = $data['unit_price'] ?? null;
 
-		if ($customerName === '') {
+		if ($customerNameRaw === null) {
+			$errors['customer_name'] = 'customer_name is required.';
+		} elseif (!is_string($customerNameRaw)) {
+			$errors['customer_name'] = 'customer_name must be a string.';
+		} elseif (trim($customerNameRaw) === '') {
 			$errors['customer_name'] = 'customer_name is required.';
 		}
 
-		if ($product === '') {
+		if ($productRaw === null) {
+			$errors['product'] = 'product is required.';
+		} elseif (!is_string($productRaw)) {
+			$errors['product'] = 'product must be a string.';
+		} elseif (trim($productRaw) === '') {
 			$errors['product'] = 'product is required.';
 		}
 
-		if (filter_var($quantity, FILTER_VALIDATE_INT) === false || (int)$quantity <= 0) {
+		if (!is_int($quantity) || $quantity <= 0) {
 			$errors['quantity'] = 'quantity must be an integer greater than zero.';
 		}
 
-		if (!is_numeric($unitPrice) || (float)$unitPrice <= 0) {
+		if ((!is_int($unitPrice) && !is_float($unitPrice)) || $unitPrice <= 0) {
 			$errors['unit_price'] = 'unit_price must be numeric and greater than zero.';
 		}
 
