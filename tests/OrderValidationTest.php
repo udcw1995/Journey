@@ -1,10 +1,13 @@
 <?php
 
+require_once __DIR__ . '/bootstrap.php';
 require_once __DIR__ . '/../src/OrderValidator.php';
 require_once __DIR__ . '/../src/Services/OrderService.php';
 
 $validator = new OrderValidator();
 $service = new OrderService($validator);
+
+Database::connect()->exec('TRUNCATE TABLE orders');
 
 $tests = [
     [
@@ -138,6 +141,51 @@ $tests = [
         ],
         'expectValid' => false,
         'expectErrors' => ['unit_price'],
+    ],
+    [
+        'name' => 'customer_name at exactly 150 characters passes',
+        'payload' => [
+            'customer_name' => str_repeat('a', 150),
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => true,
+        'expectErrors' => [],
+    ],
+    [
+        'name' => 'customer_name over 150 characters is rejected',
+        'payload' => [
+            'customer_name' => str_repeat('a', 151),
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['customer_name'],
+    ],
+    [
+        'name' => 'product over 150 characters is rejected',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => str_repeat('b', 151),
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['product'],
+    ],
+    [
+        'name' => 'multi-byte customer_name is measured in characters, not bytes',
+        'payload' => [
+            // 150 multi-byte characters (é is 2 bytes in UTF-8 but 1 char).
+            'customer_name' => str_repeat('é', 150),
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => true,
+        'expectErrors' => [],
     ],
     [
         'name' => 'quantity and unit_price reject booleans together',
