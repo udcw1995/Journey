@@ -1,7 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../src/OrderValidator.php';
-require_once __DIR__ . '/../src/OrderService.php';
+require_once __DIR__ . '/../src/Services/OrderService.php';
 
 $validator = new OrderValidator();
 $service = new OrderService($validator);
@@ -41,6 +41,28 @@ $tests = [
         'expectErrors' => ['product'],
     ],
     [
+        'name' => 'customer_name rejects non-string types',
+        'payload' => [
+            'customer_name' => ['Alice'],
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['customer_name'],
+    ],
+    [
+        'name' => 'product rejects non-string types',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => ['Keyboard'],
+            'quantity' => 2,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['product'],
+    ],
+    [
         'name' => 'quantity must be integer greater than zero',
         'payload' => [
             'customer_name' => 'Alice',
@@ -63,6 +85,28 @@ $tests = [
         'expectErrors' => ['quantity'],
     ],
     [
+        'name' => 'quantity rejects boolean values',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => 'Keyboard',
+            'quantity' => true,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['quantity'],
+    ],
+    [
+        'name' => 'quantity rejects false boolean values',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => 'Keyboard',
+            'quantity' => false,
+            'unit_price' => 49.99,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['quantity'],
+    ],
+    [
         'name' => 'unit_price must be numeric and greater than zero',
         'payload' => [
             'customer_name' => 'Alice',
@@ -72,6 +116,39 @@ $tests = [
         ],
         'expectValid' => false,
         'expectErrors' => ['unit_price'],
+    ],
+    [
+        'name' => 'unit_price rejects boolean values',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => true,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['unit_price'],
+    ],
+    [
+        'name' => 'unit_price rejects false boolean values',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => 'Keyboard',
+            'quantity' => 2,
+            'unit_price' => false,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['unit_price'],
+    ],
+    [
+        'name' => 'quantity and unit_price reject booleans together',
+        'payload' => [
+            'customer_name' => 'Alice',
+            'product' => 'Keyboard',
+            'quantity' => true,
+            'unit_price' => false,
+        ],
+        'expectValid' => false,
+        'expectErrors' => ['quantity', 'unit_price'],
     ],
     [
         'name' => 'multiple errors returned together',
@@ -122,14 +199,15 @@ $serviceResult = $service->process([
 
 if (
     $serviceResult['status'] === 'success'
-    && isset($serviceResult['data']['total_price'])
-    && $serviceResult['data']['total_price'] === 30.0
+    && ($serviceResult['message'] ?? '') === 'Order created successfully'
+    && isset($serviceResult['order']['total'])
+    && $serviceResult['order']['total'] === 30.0
 ) {
     $passed++;
-    echo "PASS: service computes total price on valid input\n";
+    echo "PASS: service returns expected success payload\n";
 } else {
     $failed++;
-    echo "FAIL: service computes total price on valid input\n";
+    echo "FAIL: service returns expected success payload\n";
 }
 
 echo "\nTotal Passed: {$passed}\n";
